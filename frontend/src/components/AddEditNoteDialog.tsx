@@ -4,22 +4,34 @@ import { Note } from "../models/note";
 import { NoteInput } from "../network/fetch";
 import * as fetchAPI from "../network/fetch";
 
-const AddNoteDialog = ({
+const AddEditNoteDialog = ({
   onDismiss,
   onNoteSaved,
+  noteToEdit,
 }: {
   onDismiss: () => void;
   onNoteSaved: (note: Note) => void;
+  noteToEdit?: Note;
 }) => {
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<NoteInput>();
+  } = useForm<NoteInput>({
+    defaultValues: {
+      title: noteToEdit?.title || "",
+      text: noteToEdit?.text || "",
+    },
+  });
 
   async function onSubmit(input: NoteInput) {
     try {
-      const noteResponse = await fetchAPI.createNote(input);
+      let noteResponse;
+      if (noteToEdit) {
+        noteResponse = await fetchAPI.updateNote(noteToEdit._id, input);
+      } else {
+        noteResponse = await fetchAPI.createNote(input);
+      }
       onNoteSaved(noteResponse);
     } catch (e) {
       console.error(e);
@@ -30,10 +42,10 @@ const AddNoteDialog = ({
   return (
     <Modal show onHide={onDismiss}>
       <Modal.Header>
-        <Modal.Title>Add Note</Modal.Title>
+        <Modal.Title>{noteToEdit ? "Edit Note" : "Add Note"}</Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        <Form id="addNoteForm" onSubmit={handleSubmit(onSubmit)}>
+        <Form id="addEditNoteForm" onSubmit={handleSubmit(onSubmit)}>
           <FormGroup className="mb-3">
             <Form.Label>Title</Form.Label>
             <Form.Control
@@ -58,7 +70,7 @@ const AddNoteDialog = ({
         </Form>
       </Modal.Body>
       <Modal.Footer>
-        <Button type="submit" form="addNoteForm" disabled={isSubmitting}>
+        <Button type="submit" form="addEditNoteForm" disabled={isSubmitting}>
           Save
         </Button>
       </Modal.Footer>
@@ -66,4 +78,4 @@ const AddNoteDialog = ({
   );
 };
 
-export default AddNoteDialog;
+export default AddEditNoteDialog;
